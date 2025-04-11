@@ -1,111 +1,140 @@
 public class MyArrayList<T> implements MyList<T> {
     private Object[] elements;
-    private int length;
+    private int size;
 
     public MyArrayList() {
-        elements = new Object[5];
-        length = 0;
+        elements = new Object[10];
+        size = 0;
     }
 
-    public void add(T element) {
-        if (length == elements.length) {
-            increaseCapacity();
-        }
-        elements[length++] = element;
-    }
-
-    private void increaseCapacity() {
-        Object[] newElements = new Object[elements.length * 2];
-        for (int i = 0; i < elements.length; i++) {
-            newElements[i] = elements[i]; // upcasting
-        }
-        elements = newElements;
-    }
-
-    public T get(int index) {
-        checkIndex(index);
-        return (T) elements[index]; // downcasting
-    }
-
-    public void remove(int index) {
-        checkIndex(index);
-        for (int i = index; i < length - 1; i++) {
-            elements[i] = elements[i + 1];
-        }
-        elements[--length] = null; // Clear the last element
-    }
-
-    private void checkIndex(int index) {
-        if (index < 0 || index >= length) {
-            throw new IndexOutOfBoundsException("Index: " + index + " not found");
+    private void ensureCapacity() {
+        if (size == elements.length) {
+            Object[] newElements = new Object[elements.length * 2];
+            for (int i = 0; i < elements.length; i++) {
+                newElements[i] = elements[i];
+            }
+            elements = newElements;
         }
     }
 
-    public int size() {
-        return length;
+    @Override
+    public void add(T item) {
+        ensureCapacity();
+        elements[size++] = item;
     }
 
-    public void add(int index, T element) {
-        if (index < 0 || index > length) {
-            throw new IndexOutOfBoundsException("Index: " + index + " out of bounds");
-        }
-        if (length == elements.length) {
-            increaseCapacity();
-        }
-        for (int i = length; i > index; i--) {
+    @Override
+    public void add(int index, T item) {
+        checkPositionIndex(index);
+        ensureCapacity();
+        for (int i = size; i > index; i--) {
             elements[i] = elements[i - 1];
         }
-        elements[index] = element;
-        length++;
+        elements[index] = item;
+        size++;
     }
 
-    public void set(int index, T element) {
-        checkIndex(index);
-        elements[index] = element;
+    @Override
+    public void addFirst(T item) {
+        add(0, item);
     }
 
-    public void addFirst(T element) {
-        add(0, element);
+    @Override
+    public void addLast(T item) {
+        add(item);
     }
 
-    public void addLast(T element) {
-        add(element);
+    @Override
+    public T get(int index) {
+        checkElementIndex(index);
+        return (T) elements[index];
     }
 
+    @Override
     public T getFirst() {
-        if (length == 0) {
-            return null;
-        }
-        return (T) elements[0];
+        return get(0);
     }
 
+    @Override
     public T getLast() {
-        if (length == 0) {
-            return null;
-        }
-        return (T) elements[length - 1];
+        return get(size - 1);
     }
 
-    public void removeFirst() {
-        if (length == 0) {
-            throw new NoSuchElementException("The list is empty");
+    @Override
+    public void remove(int index) {
+        checkElementIndex(index);
+        for (int i = index; i < size - 1; i++) {
+            elements[i] = elements[i + 1];
         }
+        elements[size - 1] = null;
+        size--;
+    }
+
+    @Override
+    public void removeFirst() {
         remove(0);
     }
 
+    @Override
     public void removeLast() {
-        if (length == 0) {
-            throw new NoSuchElementException("The list is empty");
-        }
-        remove(length - 1);
+        remove(size - 1);
     }
 
+    @Override
+    public void set(int index, T item) {
+        checkElementIndex(index);
+        elements[index] = item;
+    }
+
+    @Override
+    public void clear() {
+        elements = new Object[10];
+        size = 0;
+    }
+
+    @Override
+    public int size() {
+        return size;
+    }
+
+    @Override
+    public Object[] toArray() {
+        Object[] result = new Object[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = elements[i];
+        }
+        return result;
+    }
+
+    @Override
+    public int indexOf(Object obj) {
+        for (int i = 0; i < size; i++) {
+            if (elements[i].equals(obj)) return i;
+        }
+        return -1;
+    }
+
+    @Override
+    public int lastIndexOf(Object obj) {
+        for (int i = size - 1; i >= 0; i--) {
+            if (elements[i].equals(obj)) return i;
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean exists(Object obj) {
+        return indexOf(obj) != -1;
+    }
+
+    @Override
     public void sort() {
-        for (int i = 0; i < length - 1; i++) {
-            for (int j = 0; j < length - 1 - i; j++) {
-                Comparable<T> current = (Comparable<T>) elements[j];
-                T next = (T) elements[j + 1];
-                if (current.compareTo(next) > 0) {
+        // простой пузырьковый алгоритм (bubble sort)
+        for (int i = 0; i < size - 1; i++) {
+            for (int j = 0; j < size - i - 1; j++) {
+                Comparable<T> a = (Comparable<T>) elements[j];
+                T b = (T) elements[j + 1];
+                if (a.compareTo(b) > 0) {
                     Object temp = elements[j];
                     elements[j] = elements[j + 1];
                     elements[j + 1] = temp;
@@ -114,57 +143,29 @@ public class MyArrayList<T> implements MyList<T> {
         }
     }
 
-    public int indexOf(Object object) {
-        for (int i = 0; i < length; i++) {
-            if (elements[i].equals(object)) {
-                return i;
-            }
-        }
-        return -1;
+    private void checkElementIndex(int index) {
+        if (index < 0 || index >= size)
+            throw new IndexOutOfBoundsException("Invalid index: " + index);
     }
 
-    public int lastIndexOf(Object object) {
-        for (int i = length - 1; i >= 0; i--) {
-            if (elements[i].equals(object)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public boolean exists(Object object) {
-        return indexOf(object) != -1;
-    }
-
-    public Object[] toArray() {
-        Object[] newArray = new Object[length];
-        for (int i = 0; i < length; i++) {
-            newArray[i] = elements[i];
-        }
-        return newArray;
-    }
-
-    public void clear() {
-        for (int i = 0; i < length; i++) {
-            elements[i] = null;
-        }
-        length = 0;
+    private void checkPositionIndex(int index) {
+        if (index < 0 || index > size)
+            throw new IndexOutOfBoundsException("Invalid index for insert: " + index);
     }
 
     @Override
-    public Iterator<T> iterator() {
-        return new Iterator<T>() {
-            int index = 0;
+    public java.util.Iterator<T> iterator() {
+        return new java.util.Iterator<T>() {
+            private int cursor = 0;
 
             @Override
             public boolean hasNext() {
-                return index < length;
+                return cursor < size;
             }
 
             @Override
             public T next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                return (T) elements[index++];
+                return (T) elements[cursor++];
             }
         };
     }
